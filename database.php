@@ -11,5 +11,5 @@ if (!$conn) {
     // Menampilkan pesan error asli dari MySQL agar terlihat di browser
     die("GAGAL KONEKSI MYSQL: " . mysqli_connect_error() . " | Host: " . $host . " | User: " . $user . " | Port: " . $port);
 }
-echo "Koneksi Berhasil!";
+//echo "Koneksi Berhasil!";
 ?>
