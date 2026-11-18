@@ -5,15 +5,21 @@ error_reporting(E_ALL);
 session_start();
 require_once 'database.php';
 
-// Menyesuaikan koneksi database
-if (!isset($db) && isset($conn)) {
-    $db = $conn;
-} elseif (!isset($db) && isset($koneksi)) {
-    $db = $koneksi;
+// ========================================
+// MENYESUAIKAN KONEKSI DATABASE SECARA FLEKSIBEL
+// ========================================
+if (!isset($db) || !($db instanceof mysqli)) {
+    if (isset($conn) && ($conn instanceof mysqli)) {
+        $db = $conn;
+    } elseif (isset($koneksi) && ($koneksi instanceof mysqli)) {
+        $db = $koneksi;
+    }
 }
+
 if (!isset($db) || !($db instanceof mysqli)) {
     die("Koneksi database gagal. Periksa kembali file database.php.");
 }
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit;

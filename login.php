@@ -8,15 +8,15 @@ require_once 'database.php';
 // ========================================
 // KONEKSI DATABASE
 // ========================================
-if (!isset($conn) || !$conn) {
-    if (isset($koneksi) && $koneksi) {
-        $conn = $koneksi;
-    } elseif (isset($db) && $db) {
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    if (isset($db) && ($db instanceof mysqli)) {
         $conn = $db;
+    } elseif (isset($koneksi) && ($koneksi instanceof mysqli)) {
+        $conn = $koneksi;
     }
 }
 
-if (!isset($conn) || !$conn) {
+if (!isset($conn) || !($conn instanceof mysqli)) {
     die("Koneksi database gagal. Periksa database.php");
 }
 

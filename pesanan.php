@@ -8,16 +8,20 @@ require_once 'database.php';
 // ========================================
 // MENYESUAIKAN KONEKSI DATABASE
 // ========================================
-if (!isset($conn) && isset($db)) {
-    $conn = $db;
-} elseif (!isset($conn) && isset($koneksi)) {
-    $conn = $koneksi;
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    if (isset($db) && ($db instanceof mysqli)) {
+        $conn = $db;
+    } elseif (isset($koneksi) && ($koneksi instanceof mysqli)) {
+        $conn = $koneksi;
+    }
 }
 
 if (!isset($conn) || !($conn instanceof mysqli)) {
     die("Koneksi database gagal. Periksa database.php");
 }
+
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
 // ========================================
 // CEK LOGIN PENGGUNA
 // ========================================
@@ -111,6 +115,7 @@ if (
         exit;
     }
 }
+
 // ========================================
 // AMBIL DATA USER
 // ========================================

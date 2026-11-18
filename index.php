@@ -1,4 +1,3 @@
-
 <?php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -6,14 +5,19 @@ error_reporting(E_ALL);
 session_start();
 require_once 'database.php';
 
-/* =========================================
-   KONEKSI DATABASE
-========================================= */
-// KONEKSI DATABASE
-$db = isset($conn) ? $conn : null;
+// ========================================
+// MENYESUAIKAN KONEKSI DATABASE SECARA FLEKSIBEL
+// ========================================
+if (!isset($db) || !($db instanceof mysqli)) {
+    if (isset($conn) && ($conn instanceof mysqli)) {
+        $db = $conn;
+    } elseif (isset($koneksi) && ($koneksi instanceof mysqli)) {
+        $db = $koneksi;
+    }
+}
 
 if (!isset($db) || !($db instanceof mysqli)) {
-    die("Koneksi database gagal. Periksa database.php");
+    die("Koneksi database gagal. Periksa kembali file database.php.");
 }
 
 /* =========================================

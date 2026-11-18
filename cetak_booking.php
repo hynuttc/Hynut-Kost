@@ -1,10 +1,24 @@
-
 <?php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 session_start();
 require_once 'database.php';
+
+// ========================================
+// MENYESUAIKAN KONEKSI DATABASE SECARA FLEKSIBEL
+// ========================================
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    if (isset($db) && ($db instanceof mysqli)) {
+        $conn = $db;
+    } elseif (isset($koneksi) && ($koneksi instanceof mysqli)) {
+        $conn = $koneksi;
+    }
+}
+
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    die("Koneksi database gagal. Periksa kembali file database.php.");
+}
 
 $booking_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $format = $_GET['format'] ?? '';

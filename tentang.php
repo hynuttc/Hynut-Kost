@@ -5,16 +5,19 @@ error_reporting(E_ALL);
 session_start();
 require_once 'database.php';
 
-// Menyesuaikan koneksi database
-if (!isset($db) && isset($conn)) {
-    $db = $conn;
-} elseif (!isset($db) && isset($koneksi)) {
-    $db = $koneksi;
+// Menyesuaikan koneksi database secara fleksibel
+if (!isset($db) || !($db instanceof mysqli)) {
+    if (isset($conn) && ($conn instanceof mysqli)) {
+        $db = $conn;
+    } elseif (isset($koneksi) && ($koneksi instanceof mysqli)) {
+        $db = $koneksi;
+    }
 }
 
 if (!isset($db) || !($db instanceof mysqli)) {
     die("Koneksi database gagal. Periksa database.php");
 }
+
 $user_id = $_SESSION['user_id'] ?? null;
 $user = [];
 
@@ -60,11 +63,6 @@ $role_user = e($user['role'] ?? 'pengguna');
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
- 
-/* =========================================
-   TEMA SOFT BABY PINK PASTEL
-========================================= */
-
 :root {
     --pink: #E8A1B8;
     --pink-dark: #D985A3;
@@ -76,7 +74,6 @@ $role_user = e($user['role'] ?? 'pengguna');
     --white: #FFFFFF;
 }
 
-/* RESET DAN DASAR */
 * {
     margin: 0;
     padding: 0;
@@ -97,10 +94,6 @@ body {
 a {
     text-decoration: none;
 }
-
-/* =========================================
-   NAVBAR
-========================================= */
 
 .navbar {
     background: var(--white);
@@ -160,7 +153,6 @@ a {
     transform: translateX(-50%);
 }
 
-/* Tombol kembali */
 .btn-back-home {
     display: inline-flex;
     align-items: center;
@@ -181,7 +173,6 @@ a {
     transform: translateY(-1px);
 }
 
-/* Profil navbar */
 .btn-profile {
     background: var(--pink-light);
     color: var(--pink-dark) !important;
@@ -208,10 +199,6 @@ a {
     border: 2px solid var(--pink-border);
 }
 
-/* =========================================
-   LAYOUT UTAMA
-========================================= */
-
 .layout {
     max-width: 1300px;
     margin: 35px auto;
@@ -221,10 +208,6 @@ a {
     gap: 28px;
     align-items: start;
 }
-
-/* =========================================
-   SIDEBAR
-========================================= */
 
 .sidebar {
     background: var(--white);
@@ -271,7 +254,6 @@ a {
     text-transform: capitalize;
 }
 
-/* Menu sidebar */
 .menu-list {
     list-style: none;
     margin-top: 20px;
@@ -307,43 +289,25 @@ a {
     color: var(--pink-dark);
 }
 
-.menu-list a.active .menu-icon {
-    color: var(--pink-dark);
-}
-
-/* Dekorasi sidebar */
 .sidebar-decoration {
     margin: 30px -20px 0;
     padding: 25px 10px 15px;
     text-align: center;
-    background: linear-gradient(
-        180deg,
-        #FFFFFF 0%,
-        var(--pink-light) 100%
-    );
+    background: linear-gradient(180deg, #FFFFFF 0%, var(--pink-light) 100%);
     font-size: 12px;
     color: var(--pink-dark);
     font-weight: 600;
 }
 
-/* =========================================
-   MAIN CONTENT
-========================================= */
-
 .main-content {
     min-width: 0;
 }
 
-/* Banner selamat datang */
 .welcome-banner {
     min-height: 170px;
     padding: 30px 38px;
     border-radius: 18px;
-    background: linear-gradient(
-        120deg,
-        #F8DCE6,
-        var(--pink-light)
-    );
+    background: linear-gradient(120deg, #F8DCE6, var(--pink-light));
     border: 1px solid var(--pink-border);
     display: flex;
     align-items: center;
@@ -393,10 +357,6 @@ a {
     top: 35px;
 }
 
-/* =========================================
-   KARTU DESKRIPSI
-========================================= */
-
 .content-card {
     background: var(--white);
     border: 1px solid var(--pink-border);
@@ -411,10 +371,6 @@ a {
     line-height: 1.8;
     color: var(--muted);
 }
-
-/* =========================================
-   KEUNGGULAN
-========================================= */
 
 .feature-wrapper {
     display: grid;
@@ -465,10 +421,6 @@ a {
     line-height: 1.6;
     color: var(--muted);
 }
-
-/* =========================================
-   VISI DAN MISI
-========================================= */
 
 .visi-misi {
     display: grid;
@@ -543,10 +495,6 @@ a {
     font-size: 11px;
 }
 
-/* =========================================
-   FOOTER
-========================================= */
-
 .footer-card {
     background: var(--white);
     border: 1px solid var(--pink-border);
@@ -602,20 +550,14 @@ a {
     color: var(--muted);
 }
 
-/* =========================================
-   RESPONSIVE DESIGN
-========================================= */
-
 @media (max-width: 1000px) {
     .layout {
         grid-template-columns: 240px 1fr;
         gap: 20px;
     }
-
     .feature-wrapper {
         grid-template-columns: repeat(2, 1fr);
     }
-
     .visi-misi {
         grid-template-columns: 1fr;
     }
@@ -628,7 +570,6 @@ a {
         gap: 10px;
         justify-content: space-between;
     }
-
     .nav-center {
         position: static;
         transform: none;
@@ -636,67 +577,54 @@ a {
         width: 100%;
         text-align: center;
     }
-
     .btn-profile {
         margin-left: 0;
         order: 2;
     }
-
     .layout {
         grid-template-columns: 1fr;
         padding: 0 15px;
         margin: 20px auto;
     }
-
     .sidebar-decoration {
         display: none;
     }
-
     .menu-list {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 8px;
     }
-
     .menu-list li {
         margin: 0;
     }
-
     .welcome-banner {
         padding: 25px 20px;
         min-height: 140px;
     }
-
     .welcome-text h1 {
         font-size: 22px;
     }
-
     .welcome-icon {
         display: none;
     }
-
     .feature-wrapper {
         grid-template-columns: 1fr;
     }
-
     .footer-card {
         flex-direction: column;
         align-items: flex-start;
         gap: 15px;
     }
-
     .footer-logo-box {
         border-right: none;
         padding-right: 0;
     }
 }
-
     </style>
 </head>
 
 <body>
 
-<!-- NAVBAR -->
 <nav class="navbar">
     <div class="navbar-container">
         <a href="index.php" class="logo">
@@ -726,10 +654,7 @@ a {
     </div>
 </nav>
 
-<!-- LAYOUT UTAMA -->
 <div class="layout">
-
-    <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="sidebar-user">
             <div class="avatar-container">
@@ -771,10 +696,7 @@ a {
         </div>
     </aside>
 
-    <!-- KONTEN UTAMA -->
     <main class="main-content">
-
-        <!-- HERO BANNER -->
         <section class="welcome-banner">
             <div class="welcome-circle"></div>
             <div class="welcome-text">
@@ -786,14 +708,12 @@ a {
             </div>
         </section>
 
-        <!-- DESKRIPSI -->
         <section class="content-card">
             <p>
                 <strong>Hynut KOST</strong> merupakan layanan pencarian kost berbasis online yang menyediakan berbagai pilihan hunian dengan informasi lokasi, harga, dan fasilitas secara lengkap. Kami berkomitmen membantu mahasiswa, pekerja, maupun perantau mendapatkan tempat tinggal yang sesuai dengan keinginan dan kemampuan anggaran.
             </p>
         </section>
 
-        <!-- KEUNGGULAN -->
         <section class="feature-wrapper">
             <div class="feature-card">
                 <div class="feature-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
@@ -814,7 +734,6 @@ a {
             </div>
         </section>
 
-        <!-- VISI DAN MISI -->
         <section class="visi-misi">
             <div class="vm-card">
                 <div class="vm-header">
@@ -844,7 +763,6 @@ a {
             </div>
         </section>
 
-        <!-- FOOTER / INFO KECIL -->
         <footer class="footer-card">
             <div class="footer-logo-box">
                 <img src="uploads/logohynut.png" alt="Logo Hynut Kost">
@@ -859,9 +777,7 @@ a {
                 <p>Hynut KOST © 2026. Solusi Kost Terbaik untuk Kamu ♡</p>
             </div>
         </footer>
-
     </main>
-
 </div>
 
 </body>

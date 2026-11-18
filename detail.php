@@ -7,7 +7,9 @@ session_name('HYNUTKOST_SESSION');
 session_start();
 require_once 'database.php';
 
-// Menyesuaikan koneksi database secara fleksibel
+// ========================================
+// MENYESUAIKAN KONEKSI DATABASE SECARA FLEKSIBEL
+// ========================================
 if (!isset($db) || !($db instanceof mysqli)) {
     if (isset($conn) && ($conn instanceof mysqli)) {
         $db = $conn;

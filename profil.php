@@ -5,7 +5,9 @@ error_reporting(E_ALL);
 session_start();
 require_once 'database.php';
 
-// Menyesuaikan koneksi database secara fleksibel
+// ========================================
+// MENYESUAIKAN KONEKSI DATABASE SECARA FLEKSIBEL
+// ========================================
 if (!isset($db) || !($db instanceof mysqli)) {
     if (isset($conn) && ($conn instanceof mysqli)) {
         $db = $conn;

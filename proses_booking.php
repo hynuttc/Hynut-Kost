@@ -4,11 +4,16 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 session_start();
 require_once 'database.php';
-// MENYESUAIKAN KONEKSI DATABASE
-if (!isset($conn) && isset($db)) {
-    $conn = $db;
-} elseif (!isset($conn) && isset($koneksi)) {
-    $conn = $koneksi;
+
+// ========================================
+// MENYESUAIKAN KONEKSI DATABASE SECARA FLEKSIBEL
+// ========================================
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    if (isset($db) && ($db instanceof mysqli)) {
+        $conn = $db;
+    } elseif (isset($koneksi) && ($koneksi instanceof mysqli)) {
+        $conn = $koneksi;
+    }
 }
 
 if (!isset($conn) || !($conn instanceof mysqli)) {
@@ -16,6 +21,7 @@ if (!isset($conn) || !($conn instanceof mysqli)) {
 }
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
 // 1. Wajibkan user login terlebih dahulu
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");

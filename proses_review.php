@@ -5,6 +5,21 @@ error_reporting(E_ALL);
 session_start();
 require_once 'database.php';
 
+// ========================================
+// MENYESUAIKAN KONEKSI DATABASE SECARA FLEKSIBEL
+// ========================================
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    if (isset($db) && ($db instanceof mysqli)) {
+        $conn = $db;
+    } elseif (isset($koneksi) && ($koneksi instanceof mysqli)) {
+        $conn = $koneksi;
+    }
+}
+
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    die("Koneksi database gagal. Periksa database.php");
+}
+
 if (isset($_POST['submit_review'])) {
     $booking_id = $_POST['booking_id'];
     $rating     = $_POST['rating'];
