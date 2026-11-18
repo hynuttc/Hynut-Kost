@@ -5,11 +5,17 @@ error_reporting(E_ALL);
 session_start();
 require_once 'database.php';
 
-// Menyesuaikan koneksi database
-if (!isset($db) && isset($conn)) {
-    $db = $conn;
-} elseif (!isset($db) && isset($koneksi)) {
-    $db = $koneksi;
+// Menyesuaikan koneksi database secara fleksibel
+if (!isset($db) || !($db instanceof mysqli)) {
+    if (isset($conn) && ($conn instanceof mysqli)) {
+        $db = $conn;
+    } elseif (isset($koneksi) && ($koneksi instanceof mysqli)) {
+        $db = $koneksi;
+    }
+}
+
+if (!isset($db) || !($db instanceof mysqli)) {
+    die("Koneksi database gagal. Periksa kembali file database.php.");
 }
 
 if (!isset($_SESSION['user_id'])) {
@@ -924,7 +930,7 @@ a {
 
 </div>
 
-<!-- MODAL KUSTOM KONFIRMASI KELUAR (Tanpa 'localhost menyatakan') -->
+<!-- MODAL KUSTOM KONFIRMASI KELUAR -->
 <div id="customLogoutModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 9999; justify-content: center; align-items: center;">
     <div style="background: #ffffff; padding: 25px 30px; border-radius: 22px; border: 1px solid #f3dce8; width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(199,47,120,0.1);">
         <div style="font-size: 38px; color: #c72f78; margin-bottom: 10px;"><i class="fa-solid fa-circle-exclamation"></i></div>
@@ -937,7 +943,6 @@ a {
     </div>
 </div>
 
-<!-- JAVASCRIPT MODAL KELUAR -->
 <script>
 const btnKeluar = document.getElementById('btnKeluar');
 const customLogoutModal = document.getElementById('customLogoutModal');
