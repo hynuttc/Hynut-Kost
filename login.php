@@ -1,5 +1,9 @@
-
 <?php
+// Aktifkan error reporting untuk mendeteksi pesan kesalahan jika ada
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 session_name('HYNUTKOST_SESSION');
 session_start();
 require_once __DIR__ . '/database.php';
@@ -59,82 +63,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db_password = $user['password'] ?? '';
                 $db_role = strtolower(trim($user['role'] ?? ''));
                 $input_role = strtolower(trim($role));
+                $status_verifikasi = $user['status_verifikasi'] ?? 'Terverifikasi';
 
-                // CEK PASSWORD HASH ATAU BIASA
-                $password_info = password_get_info($db_password);
-
-                if (($password_info['algoName'] ?? 'unknown') !== 'unknown') {
-                    $password_valid = password_verify($password, $db_password);
-                } else {
-                    $password_valid = hash_equals($db_password, $password);
-                }
-
-                // CEK KESESUAIAN ROLE
-                if ($db_role !== $input_role) {
-
-                    $error = "Role yang dipilih tidak sesuai dengan akun Anda!";
-
-                } elseif (!$password_valid) {
-
-                    $error = "Password salah!";
-
+                // CEK STATUS VERIFIKASI (Jika masih Menunggu, tolak login)
+                if ($status_verifikasi === 'Menunggu') {
+                    $error = "Akun Anda masih <b>Menunggu Konfirmasi</b> dari Admin. Silakan tunggu hingga disetujui.";
                 } else {
 
-                    // LOGIN BERHASIL
-                    session_regenerate_id(true);
+                    // CEK PASSWORD HASH ATAU BIASA
+                    $password_info = password_get_info($db_password);
 
-                    $_SESSION['user_id'] = $user['user_id'];
-                    $_SESSION['nama'] = $user['nama'];
-                    $_SESSION['role'] = $user['role'];
-                    $_SESSION['is_login'] = true;
-
-                    // ========================================
-                    // MENCARI FOTO PROFIL
-                    // ========================================
-                    $found_foto = 'default.jpeg';
-
-                    $extensions = ['jpg', 'jpeg', 'png', 'gif'];
-
-                    foreach ($extensions as $ext) {
-
-                        $filename = 'user_' . $user['user_id'] . '.' . $ext;
-
-                        if (file_exists(__DIR__ . '/uploads/' . $filename)) {
-                            $found_foto = $filename;
-                            break;
-                        }
+                    if (($password_info['algoName'] ?? 'unknown') !== 'unknown') {
+                        $password_valid = password_verify($password, $db_password);
+                    } else {
+                        $password_valid = hash_equals($db_password, $password);
                     }
 
-                    $_SESSION['foto'] = $found_foto;
+                    // CEK KESESUAIAN ROLE
+                    if ($db_role !== $input_role) {
 
-                    mysqli_stmt_close($stmt);
+                        $error = "Role yang dipilih tidak sesuai dengan akun Anda!";
 
-                    // ========================================
-                    // REDIRECT BERDASARKAN ROLE
-                    // ========================================
-                    if ($db_role === 'admin') {
+                    } elseif (!$password_valid) {
 
-                        header("Location: index.php");
-                        exit;
-
-                    } elseif ($db_role === 'owner') {
-
-                        header("Location: index2.php");
-                        exit;
-
-                    } elseif ($db_role === 'user') {
-
-                        header("Location: index.php");
-                        exit;
+                        $error = "Password salah!";
 
                     } else {
 
-                        $error = "Role akun tidak dikenali.";
+                        // LOGIN BERHASIL
+                        session_regenerate_id(true);
+
+                        $_SESSION['user_id'] = $user['user_id'];
+                        $_SESSION['nama'] = $user['nama'];
+                        $_SESSION['role'] = $user['role'];
+                        $_SESSION['is_login'] = true;
+
+                        // ========================================
+                        // MENCARI FOTO PROFIL
+                        // ========================================
+                        $found_foto = 'default.jpeg';
+                        $extensions = ['jpg', 'jpeg', 'png', 'gif'];
+
+                        foreach ($extensions as $ext) {
+                            $filename = 'user_' . $user['user_id'] . '.' . $ext;
+                            if (file_exists(__DIR__ . '/uploads/' . $filename)) {
+                                $found_foto = $filename;
+                                break;
+                            }
+                        }
+
+                        $_SESSION['foto'] = $found_foto;
+
+                        mysqli_stmt_close($stmt);
+
+                        // ========================================
+                        // REDIRECT BERDASARKAN ROLE
+                        // ========================================
+                        if ($db_role === 'admin') {
+                            header("Location: index.php");
+                            exit;
+                        } elseif ($db_role === 'owner') {
+                            header("Location: index2.php");
+                            exit;
+                        } elseif ($db_role === 'user') {
+                            header("Location: index.php");
+                            exit;
+                        } else {
+                            $error = "Role akun tidak dikenali.";
+                        }
                     }
                 }
 
             } else {
-
                 $error = "Username tidak ditemukan!";
             }
 
@@ -153,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <title>Login - Hynut Kost</title>
 
-    <link rel="icon" href="uploads/logoHYNUT.png" type="image/png">
+    <link rel="icon" href="uploads/logohynut.png" type="image/png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -163,11 +163,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-
-/* =========================================
-   TEMA SOFT BABY PINK PASTEL
-========================================= */
-
 :root {
     --pink: #E8A1B8;
     --pink-dark: #D985A3;
@@ -178,8 +173,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     --muted: #927F87;
     --white: #FFFFFF;
 }
-
-/* RESET */
 
 * {
     margin: 0;
@@ -197,10 +190,6 @@ body {
     color: var(--text);
     min-height: 100vh;
 }
-
-/* =========================================
-   NAVBAR
-========================================= */
 
 .navbar {
     background: var(--white);
@@ -279,10 +268,6 @@ body {
     width: 100px;
 }
 
-/* =========================================
-   AREA LOGIN
-========================================= */
-
 .login-page {
     width: 100%;
     padding: 35px 25px 50px;
@@ -302,16 +287,8 @@ body {
     box-shadow: 0 15px 45px rgba(217, 133, 163, 0.12);
 }
 
-/* =========================================
-   BANNER KIRI
-========================================= */
-
 .login-banner {
-    background: linear-gradient(
-        145deg,
-        var(--pink-light),
-        #F5D2DF
-    );
+    background: linear-gradient(145deg, var(--pink-light), #F5D2DF);
     padding: 48px 42px;
     display: flex;
     flex-direction: column;
@@ -382,10 +359,6 @@ body {
     font-size: 14px;
 }
 
-/* =========================================
-   FORM LOGIN KANAN
-========================================= */
-
 .login-form-container {
     padding: 45px 55px;
     display: flex;
@@ -432,10 +405,6 @@ body {
     margin-bottom: 28px;
 }
 
-/* =========================================
-   PESAN ERROR
-========================================= */
-
 .alert-error {
     background: #F8DCE5;
     color: #B65375;
@@ -444,11 +413,8 @@ body {
     padding: 12px 14px;
     margin-bottom: 18px;
     font-size: 12px;
+    line-height: 1.5;
 }
-
-/* =========================================
-   INPUT FORM
-========================================= */
 
 .form-group {
     margin-bottom: 18px;
@@ -504,10 +470,6 @@ body {
     cursor: pointer;
 }
 
-/* =========================================
-   TOGGLE PASSWORD
-========================================= */
-
 .toggle-password {
     position: absolute;
     right: 15px;
@@ -525,20 +487,12 @@ body {
     color: var(--pink-dark);
 }
 
-/* =========================================
-   TOMBOL LOGIN
-========================================= */
-
 .btn-submit {
     width: 100%;
     height: 51px;
     border: none;
     border-radius: 30px;
-    background: linear-gradient(
-        90deg,
-        var(--pink),
-        var(--pink-dark)
-    );
+    background: linear-gradient(90deg, var(--pink), var(--pink-dark));
     color: var(--white);
     font-family: inherit;
     font-size: 14px;
@@ -553,10 +507,6 @@ body {
     background: var(--pink-dark);
     transform: translateY(-2px);
 }
-
-/* =========================================
-   PEMISAH
-========================================= */
 
 .or-divider {
     display: flex;
@@ -574,10 +524,6 @@ body {
     flex: 1;
     background: var(--pink-border);
 }
-
-/* =========================================
-   TOMBOL DAFTAR
-========================================= */
 
 .btn-register {
     width: 100%;
@@ -601,40 +547,27 @@ body {
     color: var(--pink-dark);
 }
 
-/* =========================================
-   RESPONSIVE TABLET
-========================================= */
-
 @media (max-width: 950px) {
     .nav-menu {
         position: static;
         transform: none;
     }
-
     .nav-spacer {
         display: none;
     }
-
     .login-wrapper {
         grid-template-columns: 0.9fr 1.1fr;
     }
-
     .login-banner {
         padding: 30px;
     }
-
     .login-form-container {
         padding: 35px 30px;
     }
-
     .banner-title {
         font-size: 29px;
     }
 }
-
-/* =========================================
-   RESPONSIVE HP
-========================================= */
 
 @media (max-width: 650px) {
     .navbar-container {
@@ -643,94 +576,49 @@ body {
         gap: 12px;
         justify-content: space-between;
     }
-
     .nav-menu {
         width: 100%;
         justify-content: center;
         gap: 20px;
         flex-wrap: wrap;
     }
-
     .nav-menu a.nav-item {
         font-size: 13px;
     }
-
     .login-page {
         padding: 20px 12px 30px;
     }
-
     .login-wrapper {
         display: flex;
         flex-direction: column;
         border-radius: 17px;
     }
-
     .login-banner {
         padding: 27px 22px;
     }
-
     .banner-title {
         font-size: 28px;
     }
-
     .login-form-container {
         padding: 30px 22px;
     }
-
     .form-title {
         font-size: 25px;
     }
 }
-
-/* =========================================
-   RESPONSIVE HP KECIL
-========================================= */
-
-@media (max-width: 380px) {
-    .logo-title {
-        font-size: 18px;
-    }
-
-    .nav-menu {
-        gap: 13px;
-    }
-
-    .nav-menu a.nav-item {
-        font-size: 12px;
-    }
-
-    .login-form-container {
-        padding: 25px 17px;
-    }
-
-    .banner-title {
-        font-size: 24px;
-    }
-}
-
 </style>
 </head>
 
 <body>
 
-<!-- =================================
-     NAVBAR
-================================= -->
-
 <nav class="navbar">
     <div class="navbar-container">
-
         <a href="index.php" class="logo">
-
-            <img src="uploads/logohynut.png"
-                 alt="Logo Hynut Kost"
-                 class="logo-icon">
-
+            <img src="uploads/logohynut.png" alt="Logo Hynut Kost" class="logo-icon">
             <div class="logo-text-group">
                 <span class="logo-title">Hynut</span>
                 <span class="logo-subtitle">KOST</span>
             </div>
-
         </a>
 
         <div class="nav-menu">
@@ -741,108 +629,66 @@ body {
         </div>
 
         <div class="nav-spacer"></div>
-
     </div>
 </nav>
 
-<!-- =================================
-     HALAMAN LOGIN
-================================= -->
-
 <main class="login-page">
-
     <div class="login-wrapper">
 
-        <!-- BAGIAN KIRI -->
-
         <section class="login-banner">
-
             <div class="login-banner-content">
-
                 <h1 class="banner-title">
                     Selamat Datang di
                     <span>Hynut KOST</span>
                 </h1>
-
                 <p class="banner-description">
                     Temukan kost terbaik, nyaman, dan sesuai
                     dengan kebutuhanmu. Cari tempat tinggal
                     impianmu dengan mudah, cepat, dan aman.
                 </p>
-
                 <div class="banner-features">
-
                     <div class="feature">
-                        <div class="feature-icon">
-                            <i class="fa-solid fa-house"></i>
-                        </div>
+                        <div class="feature-icon"><i class="fa-solid fa-house"></i></div>
                         <span>Banyak Pilihan Kost</span>
                     </div>
-
                     <div class="feature">
-                        <div class="feature-icon">
-                            <i class="fa-solid fa-shield-halved"></i>
-                        </div>
+                        <div class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
                         <span>Aman & Terpercaya</span>
                     </div>
-
                     <div class="feature">
-                        <div class="feature-icon">
-                            <i class="fa-solid fa-location-dot"></i>
-                        </div>
+                        <div class="feature-icon"><i class="fa-solid fa-location-dot"></i></div>
                         <span>Lokasi Strategis</span>
                     </div>
-
                 </div>
-
             </div>
-
         </section>
 
-        <!-- BAGIAN KANAN FORM LOGIN -->
-
         <section class="login-form-container">
-
             <div class="form-logo">
                 <div class="form-logo-icon">
-                    <img src="uploads/logohynut.png"
-                         alt="Logo Hynut Kost">
+                    <img src="uploads/logohynut.png" alt="Logo Hynut Kost">
                 </div>
             </div>
 
             <h1 class="form-title">
                 Login ke <span>Hynut KOST</span>
             </h1>
-
             <p class="form-subtitle">
                 Masuk untuk melanjutkan ke akun Anda
             </p>
 
-            <!-- PESAN ERROR -->
-
             <?php if (!empty($error)): ?>
-
                 <div class="alert-error">
                     <i class="fa-solid fa-circle-exclamation"></i>
-                    <?= htmlspecialchars($error); ?>
+                    <?= $error; ?>
                 </div>
-
             <?php endif; ?>
 
-            <!-- FORM LOGIN -->
-
             <form action="" method="POST">
-
-                <!-- USERNAME -->
-
                 <div class="form-group">
-
                     <label>Username</label>
-
                     <div class="input-wrapper">
-
                         <i class="fa-solid fa-user"></i>
-
                         <input
                             type="text"
                             name="username"
@@ -851,21 +697,13 @@ body {
                             autocomplete="username"
                             required
                         >
-
                     </div>
-
                 </div>
 
-                <!-- PASSWORD -->
-
                 <div class="form-group">
-
                     <label>Password</label>
-
                     <div class="input-wrapper">
-
                         <i class="fa-solid fa-lock"></i>
-
                         <input
                             type="password"
                             name="password"
@@ -874,7 +712,6 @@ body {
                             autocomplete="current-password"
                             required
                         >
-
                         <button
                             type="button"
                             class="toggle-password"
@@ -883,110 +720,60 @@ body {
                         >
                             <i class="fa-solid fa-eye" id="eyeIcon"></i>
                         </button>
-
                     </div>
-
                 </div>
-
-                <!-- ROLE -->
 
                 <div class="form-group">
-
                     <label>Role</label>
-
                     <div class="input-wrapper">
-
                         <i class="fa-solid fa-users"></i>
-
                         <select name="role" required>
-
-                            <option value="" disabled
-                                <?= $role_input === '' ? 'selected' : ''; ?>>
+                            <option value="" disabled <?= $role_input === '' ? 'selected' : ''; ?>>
                                 Pilih Role
                             </option>
-
-                            <option value="Admin"
-                                <?= $role_input === 'Admin' ? 'selected' : ''; ?>>
+                            <option value="Admin" <?= $role_input === 'Admin' ? 'selected' : ''; ?>>
                                 Admin
                             </option>
-
-                            <option value="Owner"
-                                <?= $role_input === 'Owner' ? 'selected' : ''; ?>>
+                            <option value="Owner" <?= $role_input === 'Owner' ? 'selected' : ''; ?>>
                                 Owner
                             </option>
-
-                            <option value="User"
-                                <?= $role_input === 'User' ? 'selected' : ''; ?>>
+                            <option value="User" <?= $role_input === 'User' ? 'selected' : ''; ?>>
                                 User
                             </option>
-
                         </select>
-
                     </div>
-
                 </div>
 
-                <!-- TOMBOL LOGIN -->
-
                 <button type="submit" class="btn-submit">
-
-                    <i class="fa-solid fa-right-to-bracket"></i>
-                    &nbsp; Login
-
+                    <i class="fa-solid fa-right-to-bracket"></i> &nbsp; Login
                 </button>
-
             </form>
 
-            <!-- PEMISAH -->
-
-            <div class="or-divider">
-                atau
-            </div>
-
-            <!-- TOMBOL DAFTAR -->
+            <div class="or-divider">atau</div>
 
             <a href="register.php" class="btn-register">
-
-                <i class="fa-solid fa-user-plus"></i>
-                Daftar Akun Baru
-
+                <i class="fa-solid fa-user-plus"></i> Daftar Akun Baru
             </a>
-
         </section>
 
     </div>
-
 </main>
 
-<!-- =================================
-     JAVASCRIPT PASSWORD
-================================= -->
-
 <script>
-
 function togglePassword() {
-
     const password = document.getElementById('password');
     const eyeIcon = document.getElementById('eyeIcon');
 
     if (password.type === 'password') {
-
         password.type = 'text';
-
         eyeIcon.classList.remove('fa-eye');
         eyeIcon.classList.add('fa-eye-slash');
-
     } else {
-
         password.type = 'password';
-
         eyeIcon.classList.remove('fa-eye-slash');
         eyeIcon.classList.add('fa-eye');
-
     }
-
 }
-
 </script>
 
 </body>
