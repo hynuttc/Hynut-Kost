@@ -7,7 +7,7 @@ RUN rm -f /etc/apache2/mods-enabled/mpm_*.load \
     /etc/apache2/mods-enabled/mpm_*.conf \
     && a2enmod mpm_prefork
 
-
+RUN apache2ctl -M | grep mpm
 # Install ekstensi database
 RUN docker-php-ext-install mysqli pdo_mysql
 
