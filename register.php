@@ -1,180 +1,102 @@
-
 <?php
+// Aktifkan error reporting untuk mendeteksi pesan kesalahan jika ada
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 session_name('HYNUTKOST_SESSION');
 session_start();
 require_once __DIR__ . '/database.php';
 
-// ========================================
-// KONEKSI DATABASE
-// ========================================
+// Menyesuaikan koneksi database ($conn, $koneksi, atau$db)
 if (!isset($conn) && isset($koneksi)) {
-    $conn = $koneksi;
+    $conn =$koneksi;
 } elseif (!isset($conn) && isset($db)) {
-    $conn = $db;
+    $conn =$db;
 }
 
-if (!isset($conn) || !($conn instanceof mysqli)) {
+if (!isset($conn) \vert{}\vert{} !($conn instanceof mysqli)) {
     die("Koneksi database gagal. Periksa database.php");
 }
 
 $error = '';
-
-$nama = '';
-$email = '';
-$no_wa = '';
-
+$success = '';$nama = '';
+$email = '';$no_wa = '';
 
 // ========================================
 // PROSES REGISTER
 // ========================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nama     = trim($_POST['nama'] ?? '');
+    $email    = trim($_POST['email'] ?? '');
+    $no_wa    = trim($_POST['no_wa'] ?? '');
+    $password =$_POST['password'] ?? '';
+    $role     = trim($_POST['role'] ?? '');
 
-    $nama = trim($_POST['nama'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $no_wa = trim($_POST['no_wa'] ?? '');
-    $password = $_POST['password'] ?? '';
-
-    if ($nama === '' || $email === '' || $password === '') {
-        $error = "Harap isi semua kolom yang wajib!";
-
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = "Format email tidak valid!";
-
+    if ($nama === '' || $email === '' \vert{}\vert{}$password === '' || $role === '') {$error = "Harap isi semua kolom wajib dan pilih role!";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {$error = "Format email tidak valid!";
+    } elseif (strlen($password) < 6) {$error = "Password minimal harus 6 karakter!";
     } else {
+        // Cek apakah email sudah terdaftar
+        $stmt_cek = mysqli_prepare($conn, "SELECT email FROM user WHERE email = ? LIMIT 1");
+        mysqli_stmt_bind_param($stmt_cek, "s", $email);
+        mysqli_stmt_execute($stmt_cek);
+        mysqli_stmt_store_result($stmt_cek);
 
-        // PERIKSA EMAIL
-        $stmt = mysqli_prepare(
-            $conn,
-            "SELECT email FROM user WHERE email = ? LIMIT 1"
-        );
-
-        if (!$stmt) {
-            $error = "Terjadi kesalahan database.";
-
+        if (mysqli_stmt_num_rows($stmt_cek) > 0) {$error = "Email sudah terdaftar! Gunakan email lain.";
+            mysqli_stmt_close($stmt_cek);
         } else {
-            mysqli_stmt_bind_param($stmt, "s", $email);
-            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt_cek);
 
-            $hasil = mysqli_stmt_get_result($stmt);
-            $email_ada = mysqli_num_rows($hasil) > 0;
+            // Hash Password
+            $password_hash = password_hash($password, PASSWORD_DEFAULT);
+            
+            // Set status verifikasi awal menjadi "Menunggu"
+            $status_verifikasi = 'Menunggu';
 
-            mysqli_stmt_close($stmt);
+            // Query insert data user
+            $query_insert = "INSERT INTO user (nama, email, password, role, no_wa, status_verifikasi) VALUES (?, ?, ?, ?, ?, ?)";
+            $stmt_insert = mysqli_prepare($conn,$query_insert);
 
-            if ($email_ada) {
-                $error = "Email sudah terdaftar!";
+            if ($stmt_insert) {
+                mysqli_stmt_bind_param($stmt_insert, "ssssss", $nama,$email, $password_hash,$role, $no_wa,$status_verifikasi);
+                
+                if (mysqli_stmt_execute($stmt_insert)) {
+                    // Ambil user_id unik yang baru saja masuk ke database
+                    $user_id = mysqli_insert_id($conn);
+                    mysqli_stmt_close($stmt_insert);
 
-            } else {
+                    // Logika penyimpanan foto profil dengan ID unik di folder uploads
+                    if (isset($_FILES['foto']) &&$_FILES['foto']['error'] === UPLOAD_ERR_OK) {
+                        $file_tmp   =$_FILES['foto']['tmp_name'];
+                        
+                        $finfo = finfo_open(FILEINFO_MIME_TYPE);$mime = finfo_file($finfo,$file_tmp);
+                        finfo_close($finfo);
 
-                // HASH PASSWORD
-                $password_hash = password_hash(
-                    $password,
-                    PASSWORD_DEFAULT
-                );
+                        $allowed_types = [
+                            'image/jpeg' => 'jpg',
+                            'image/png' => 'png',
+                            'image/gif' => 'gif'
+                        ];
 
-                // SIMPAN DATA USER
-                $stmt = mysqli_prepare(
-                    $conn,
-                    "INSERT INTO user
-                    (nama, email, password, role, no_wa, status_verifikasi)
-                    VALUES (?, ?, ?, 'User', ?, 'Terverifikasi')"
-                );
-
-                if (!$stmt) {
-                    $error = "Gagal menyiapkan pendaftaran.";
-
-                } else {
-                    mysqli_stmt_bind_param(
-                        $stmt,
-                        "ssss",
-                        $nama,
-                        $email,
-                        $password_hash,
-                        $no_wa
-                    );
-
-                    if (mysqli_stmt_execute($stmt)) {
-
-                        $user_id = mysqli_insert_id($conn);
-                        mysqli_stmt_close($stmt);
-
-                        // =================================
-                        // FOTO PROFIL DEFAULT
-                        // =================================
-                        $nama_foto = 'default.jpeg';
-
-                        // =================================
-                        // UPLOAD FOTO PROFIL
-                        // =================================
-                        if (
-                            isset($_FILES['foto']) &&
-                            $_FILES['foto']['error'] !== UPLOAD_ERR_NO_FILE
-                        ) {
-
-                            if ($_FILES['foto']['error'] === UPLOAD_ERR_OK) {
-
-                                $file_tmp = $_FILES['foto']['tmp_name'];
-
-                                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                                $mime = finfo_file($finfo, $file_tmp);
-                                finfo_close($finfo);
-
-                                $allowed_types = [
-                                    'image/jpeg' => 'jpg',
-                                    'image/png' => 'png',
-                                    'image/gif' => 'gif'
-                                ];
-
-                                if (isset($allowed_types[$mime])) {
-
-                                    $folder_upload = __DIR__ . '/uploads/';
-
-                                    if (!is_dir($folder_upload)) {
-                                        mkdir($folder_upload, 0755, true);
-                                    }
-
-                                    $ekstensi = $allowed_types[$mime];
-
-                                    $nama_foto = 'user_' .
-                                        $user_id . '.' . $ekstensi;
-
-                                    if (!move_uploaded_file(
-                                        $file_tmp,
-                                        $folder_upload . $nama_foto
-                                    )) {
-                                        $nama_foto = 'default.jpeg';
-                                    }
-
-                                } else {
-                                    $error = "Foto harus berformat JPG, PNG, atau GIF.";
-                                }
-
-                            } else {
-                                $error = "Foto gagal diunggah.";
+                        if (isset($allowed_types[$mime])) {$folder_upload = __DIR__ . '/uploads/';
+                            if (!is_dir($folder_upload)) {
+                                mkdir($folder_upload, 0755, true);
                             }
+
+                            $ekstensi =$allowed_types[$mime];$nama_foto = 'user_' . $user_id . '.' .$ekstensi;
+
+                            move_uploaded_file($file_tmp, $folder_upload .$nama_foto);
                         }
-
-                        // =================================
-                        // SIMPAN FOTO KE SESSION
-                        // =================================
-                        if ($error === '') {
-
-                            $_SESSION['user_id'] = $user_id;
-                            $_SESSION['nama'] = $nama;
-                            $_SESSION['role'] = 'User';
-                            $_SESSION['foto'] = $nama_foto;
-                            $_SESSION['is_login'] = true;
-
-                            header("Location: profil.php");
-                            exit;
-                        }
-
-                    } else {
-                        $error = "Gagal mendaftar: " .
-                            mysqli_stmt_error($stmt);
-
-                        mysqli_stmt_close($stmt);
                     }
+
+                    $success = "Pendaftaran berhasil! Akun Anda sedang <b>Menunggu Konfirmasi</b> dari Admin. Silakan tunggu hingga disetujui untuk dapat login.";
+                } else {
+                    $error = "Gagal mendaftar: " . mysqli_error($conn);
+                    mysqli_stmt_close($stmt_insert);
                 }
+            } else {
+                $error = "Terjadi kesalahan pada sistem database.";
             }
         }
     }
@@ -445,7 +367,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         margin-bottom: 25px;
     }
 
-    /* ERROR */
+    /* ERROR & SUCCESS ALERT */
     .alert-error {
         background: #FCEAF0;
         color: #B65375;
@@ -458,6 +380,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     .alert-error i {
         margin-right: 6px;
+    }
+
+    .alert-success {
+        background: #EAFCEF;
+        color: #2E7D32;
+        border: 1px solid #C8E6C9;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 18px;
+        font-size: 13px;
+        text-align: center;
+        line-height: 1.6;
     }
 
     /* INPUT */
@@ -486,7 +420,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         font-size: 14px;
     }
 
-    .form-group input {
+    .form-group input, 
+    .form-group select {
         width: 100%;
         height: 46px;
         padding: 0 15px 0 43px;
@@ -500,6 +435,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         transition: 0.3s;
     }
 
+    .form-group select {
+        cursor: pointer;
+    }
+
     .form-group input[type="file"] {
         padding: 10px 15px;
         height: auto;
@@ -511,7 +450,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         color: #B7A6AE;
     }
 
-    .form-group input:focus {
+    .form-group input:focus,
+    .form-group select:focus {
         border-color: var(--pink);
         box-shadow: 0 0 0 3px rgba(232, 161, 184, 0.15);
     }
@@ -549,6 +489,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         background: var(--pink-dark);
         transform: translateY(-2px);
         box-shadow: 0 6px 16px rgba(217, 133, 163, 0.22);
+    }
+
+    .or-divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 18px 0;
+        color: var(--muted);
+        font-size: 12px;
+    }
+
+    .or-divider::before, 
+    .or-divider::after {
+        content: "";
+        height: 1px;
+        flex: 1;
+        background: var(--pink-border);
+    }
+
+    .btn-login-link {
+        width: 100%;
+        height: 46px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1.5px solid var(--pink);
+        border-radius: 30px;
+        text-decoration: none;
+        color: var(--pink-dark);
+        font-size: 13px;
+        font-weight: 700;
+        transition: 0.3s;
+    }
+
+    .btn-login-link:hover {
+        background: var(--pink-light);
     }
 
     .footer-link {
@@ -685,24 +662,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </h1>
 
                 <p class="banner-description">
-                    Daftarkan akunmu dan temukan hunian kost impian
-                    dengan mudah, cepat, dan aman bersama kami.
+                    Daftar sebagai Owner atau User. Setiap pendaftaran akun baru memerlukan verifikasi dan konfirmasi dari Admin sistem.
                 </p>
 
                 <div class="banner-features">
 
                     <div class="feature">
                         <div class="feature-icon">
-                            <i class="fa-solid fa-house"></i>
+                            <i class="fa-solid fa-user-shield"></i>
                         </div>
-                        <span>Banyak Pilihan Kost</span>
+                        <span>Verifikasi Oleh Admin</span>
                     </div>
 
                     <div class="feature">
                         <div class="feature-icon">
-                            <i class="fa-solid fa-shield-halved"></i>
+                            <i class="fa-solid fa-house"></i>
                         </div>
-                        <span>Aman & Terpercaya</span>
+                        <span>Kelola & Cari Kost Mudah</span>
                     </div>
 
                     <div class="feature">
@@ -734,7 +710,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </h1>
 
             <p class="form-subtitle">
-                Buat akun baru untuk mulai mencari kost
+                Buat akun baru untuk mulai bergabung
             </p>
 
 
@@ -745,6 +721,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?>
                 </div>
             <?php endif; ?>
+
+
+            <!-- PESAN SUKSES / MENUNGGU KONFIRMASI -->
+            <?php if (!empty($success)): ?>
+                <div class="alert-success">
+                    <i class="fa-solid fa-circle-check" style="font-size: 18px; margin-bottom: 6px; display: block;"></i>
+                    <?= $success; ?>
+                    <div style="margin-top: 15px;">
+                        <a href="login.php" class="btn-login-link" style="background: var(--pink); color: white; border: none;">
+                            <i class="fa-solid fa-right-to-bracket"></i> Kembali ke Halaman Login
+                        </a>
+                    </div>
+                </div>
+            <?php else: ?>
 
 
             <!-- FORM PENDAFTARAN -->
@@ -760,135 +750,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input
                             type="text"
                             name="nama"
-                            placeholder="Masukkan nama lengkap"
-                            value="<?= htmlspecialchars($nama, ENT_QUOTES, 'UTF-8'); ?>"
-                            required
-                        >
-                    </div>
-                </div>
-
-
-                <!-- EMAIL -->
-                <div class="form-group">
-                    <label>Email</label>
-
-                    <div class="input-wrapper">
-                        <i class="fa-solid fa-envelope"></i>
-
-                        <input
-                            type="email"
-                            name="email"
-                            placeholder="Masukkan email"
-                            value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8'); ?>"
-                            required
-                        >
-                    </div>
-                </div>
-
-
-                <!-- WHATSAPP -->
-                <div class="form-group">
-                    <label>No WhatsApp</label>
-
-                    <div class="input-wrapper">
-                        <i class="fa-brands fa-whatsapp"></i>
-
-                        <input
-                            type="text"
-                            name="no_wa"
-                            placeholder="Masukkan nomor WhatsApp"
-                            value="<?= htmlspecialchars($no_wa, ENT_QUOTES, 'UTF-8'); ?>"
-                        >
-                    </div>
-                </div>
-
-
-                <!-- PASSWORD -->
-                <div class="form-group">
-                    <label>Password</label>
-
-                    <div class="input-wrapper">
-                        <i class="fa-solid fa-lock"></i>
-
-                        <input
-                            type="password"
-                            name="password"
-                            id="password"
-                            placeholder="Masukkan password"
-                            required
-                        >
-
-                        <button
-                            type="button"
-                            class="toggle-password"
-                            onclick="togglePassword()"
-                            aria-label="Tampilkan password"
-                        >
-                            <i class="fa-solid fa-eye" id="eyeIcon"></i>
-                        </button>
-                    </div>
-                </div>
-
-
-                <!-- FOTO PROFIL -->
-                <div class="form-group">
-                    <label>Foto Profil (Opsional)</label>
-
-                    <div class="input-wrapper">
-                        <input
-                            type="file"
-                            name="foto"
-                            accept=".jpg,.jpeg,.png,.gif"
-                        >
-                    </div>
-                </div>
-
-
-                <!-- TOMBOL DAFTAR -->
-                <button type="submit" class="btn-submit">
-                    <i class="fa-solid fa-user-plus"></i>
-                    &nbsp; Daftar Sekarang
-                </button>
-
-            </form>
-
-
-            <div class="footer-link">
-                Sudah punya akun?
-                <a href="login.php">Login di sini</a>
-            </div>
-
-        </section>
-
-    </div>
-
-</main>
-
-
-<!-- JAVASCRIPT PASSWORD -->
-<script>
-function togglePassword() {
-
-    const password = document.getElementById('password');
-    const eyeIcon = document.getElementById('eyeIcon');
-
-    if (password.type === 'password') {
-
-        password.type = 'text';
-
-        eyeIcon.classList.remove('fa-eye');
-        eyeIcon.classList.add('fa-eye-slash');
-
-    } else {
-
-        password.type = 'password';
-
-        eyeIcon.classList.remove('fa-eye-slash');
-        eyeIcon.classList.add('fa-eye');
-
-    }
-}
-</script>
-
-</body>
-</html>
