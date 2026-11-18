@@ -833,7 +833,7 @@ a {
 
         <div class="nav-center">
             <a href="index.php" class="btn-back-home">
-                <i class="fa-solid fa-arrow-left"></i> Kembali ke index
+                <i class="fa-solid fa-arrow-left"></i> Kembali ke Beranda
             </a>
         </div>
 
