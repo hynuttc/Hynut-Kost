@@ -1,9 +1,18 @@
 <?php
-$host = getenv('MYSQLHOST') ?: 'localhost';
-$user = getenv('MYSQLUSER') ?: 'root';
-$pass = getenv('MYSQLPASSWORD') ?: '';
-$db   = getenv('MYSQLDATABASE') ?: 'nama_database';
-$port = getenv('MYSQLPORT') ?: '3306';
+$host = getenv('MYSQLHOST');
+$user = getenv('MYSQLUSER');
+$pass = getenv('MYSQLPASSWORD');
+$db   = getenv('MYSQLDATABASE');
+$port = getenv('MYSQLPORT');
+
+// Jika host kosong atau bernilai lokal, fallback ke localhost
+if (empty($host)) {
+    $host = 'localhost';
+    $user = 'root';
+    $pass = '';
+    $db   = 'hynutkost'; // sesuaikan nama database lokalmu
+    $port = '3306';
+}
 
 $conn = mysqli_connect($host, $user, $pass, $db, $port);
 
