@@ -1,11 +1,10 @@
 <?php
-session_name('HYNUTKOST_SESSION');
 session_start();
 
-// Menghapus semua session pengguna yang sedang login
+// Menghapus semua data session yang aktif
 session_unset();
 session_destroy();
 
-// Mengarahkan ke halaman Beranda utama
+// Mengarahkan kembali ke halaman Beranda utama
 header("Location: index.php");
 exit;
