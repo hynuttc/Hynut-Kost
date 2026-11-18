@@ -22,6 +22,14 @@ RUN docker-php-ext-install mysqli pdo_mysql
 # =====================================
 RUN a2enmod rewrite
 
+# Periksa seluruh konfigurasi MPM Apache
+RUN echo "===== MPM LOAD FILES =====" && \
+    find /etc/apache2 -type f \( -name "*.load" -o -name "*.conf" \) \
+    -exec grep -HnE "mpm_(event|worker|prefork)" {} \; || true
+
+RUN echo "===== ENABLED MPM MODULES =====" && \
+    ls -la /etc/apache2/mods-enabled/mpm_*
+    
 # =====================================
 # 4. KONFIGURASI APACHE
 # =====================================
