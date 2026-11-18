@@ -3,8 +3,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-session_name('HYNUTKOST_SESSION');
-session_start();
+session_start(); // Disamakan menggunakan session_start() standar agar sinkron dengan index.php
 require_once 'database.php';
 
 // ========================================
@@ -167,7 +166,7 @@ $foto_session = (!empty($_SESSION['foto']) && file_exists('uploads/' . $_SESSION
     --white: #FFFFFF;
 }
 
-* {
+- {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
