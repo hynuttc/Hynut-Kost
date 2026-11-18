@@ -1,6 +1,9 @@
 <?php
-// Hubungkan ke database.php yang ada di luar folder kosvani
-include 'database.php'; 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+session_start();
+require_once 'database.php';
 
 if (isset($_POST['submit_review'])) {
     $booking_id = $_POST['booking_id'];
