@@ -5,10 +5,9 @@ $pass = getenv('MYSQLPASSWORD');
 $db   = getenv('MYSQLDATABASE');
 $port = getenv('MYSQLPORT');
 
-// Koneksi menggunakan variabel Railway
 $conn = mysqli_connect($host, $user, $pass, $db, $port);
 
 if (!$conn) {
-    die("Koneksi gagal secara detail: " . mysqli_connect_error());
+    die("Error Koneksi MySQL: " . mysqli_connect_error());
 }
 ?>
