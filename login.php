@@ -117,10 +117,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // REDIRECT BERDASARKAN ROLE
                         // ========================================
                         if ($db_role === 'admin') {
-                            header("Location: ../index.php");
+                            header("Location: admin/index.php");
                             exit;
                         } elseif ($db_role === 'owner') {
-                            header("Location: ../index2.php");
+                            header("Location: owner/index2.php");
                             exit;
                         } elseif ($db_role === 'user') {
                             header("Location: index.php");
