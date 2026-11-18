@@ -9,12 +9,8 @@ require_once 'database.php';
 /* =========================================
    KONEKSI DATABASE
 ========================================= */
-if (!isset($db) && isset($conn)) {
-    $db = $conn;
-}
-if (!isset($db) && isset($koneksi)) {
-    $db = $koneksi;
-}
+// KONEKSI DATABASE
+$db = isset($conn) ? $conn : null;
 
 if (!isset($db) || !($db instanceof mysqli)) {
     die("Koneksi database gagal. Periksa database.php");
