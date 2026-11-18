@@ -2,18 +2,18 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-session_start();
-require_once 'database.php';
 
 session_name('HYNUTKOST_SESSION');
 session_start();
-require_once __DIR__ . '/database.php';
+require_once 'database.php';
 
-// Menyesuaikan koneksi database
-if (!isset($db) && isset($conn)) {
-    $db = $conn;
-} elseif (!isset($db) && isset($koneksi)) {
-    $db = $koneksi;
+// Menyesuaikan koneksi database secara fleksibel
+if (!isset($db) || !($db instanceof mysqli)) {
+    if (isset($conn) && ($conn instanceof mysqli)) {
+        $db = $conn;
+    } elseif (isset($koneksi) && ($koneksi instanceof mysqli)) {
+        $db = $koneksi;
+    }
 }
 
 // Periksa koneksi database
@@ -29,8 +29,6 @@ if ($kos_id <= 0) {
     header("Location: index.php");
     exit;
 }
-
-// Lanjutkan query detail kos di bawah sini
 
 /*
 |--------------------------------------------------------------------------
@@ -156,11 +154,6 @@ $foto_session = (!empty($_SESSION['foto']) && file_exists('uploads/' . $_SESSION
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <style>
- 
-/* =========================================
-   TEMA SOFT BABY PINK PASTEL
-========================================= */
-
 :root {
     --pink: #E8A1B8;
     --pink-dark: #D985A3;
@@ -172,7 +165,6 @@ $foto_session = (!empty($_SESSION['foto']) && file_exists('uploads/' . $_SESSION
     --white: #FFFFFF;
 }
 
-/* RESET DAN DASAR */
 * {
     margin: 0;
     padding: 0;
@@ -194,7 +186,6 @@ a {
     text-decoration: none;
 }
 
-/* NAVBAR */
 .navbar {
     background: var(--white);
     border-bottom: 1px solid var(--pink-border);
@@ -300,7 +291,6 @@ a {
     border: 2px solid var(--pink);
 }
 
-/* MAIN CONTAINER */
 .container {
     max-width: 1100px;
     margin: 35px auto;
@@ -318,7 +308,6 @@ a {
     align-items: start;
 }
 
-/* GALERI FOTO */
 .main-img {
     width: 100%;
     height: 320px;
@@ -351,7 +340,6 @@ a {
     transform: scale(1.03);
 }
 
-/* DETAIL INFORMASI */
 .title {
     font-size: 24px;
     color: var(--text);
@@ -386,7 +374,6 @@ a {
     margin-bottom: 20px;
 }
 
-/* FASILITAS */
 .fasilitas-title {
     font-size: 15px;
     font-weight: 800;
@@ -405,7 +392,6 @@ a {
     font-weight: 500;
 }
 
-/* FORM BOOKING */
 .booking-box {
     margin-top: 25px;
     background: var(--pink-light);
@@ -459,7 +445,6 @@ a {
     transform: translateY(-1px);
 }
 
-/* DESKRIPSI */
 .deskripsi {
     grid-column: 1 / -1;
     margin-top: 30px;
@@ -480,7 +465,6 @@ a {
     line-height: 1.8;
 }
 
-/* TOMBOL AKSI */
 .actions {
     grid-column: 1 / -1;
     display: flex;
@@ -526,7 +510,6 @@ a {
     color: var(--white);
 }
 
-/* BAGIAN ULASAN */
 .review-section {
     grid-column: 1 / -1;
     margin-top: 35px;
@@ -581,7 +564,6 @@ a {
     font-weight: normal;
 }
 
-/* FORM REVIEW */
 .form-review-box {
     background: var(--pink-light);
     padding: 20px;
@@ -633,59 +615,32 @@ a {
     background: var(--pink-dark);
 }
 
-/* RESPONSIVE */
 @media (max-width: 768px) {
     .detail-grid {
         grid-template-columns: 1fr;
     }
-
     .navbar-container {
         padding: 12px 18px;
     }
-
     .nav-menu {
         display: none;
     }
-
     .container {
         width: 95%;
         padding: 20px 15px;
         margin: 20px auto;
     }
-
     .actions {
         flex-direction: column;
     }
-
     .main-img {
         height: 260px;
     }
 }
-
-@media (max-width: 450px) {
-    .title {
-        font-size: 21px;
-    }
-
-    .harga {
-        font-size: 21px;
-    }
-
-    .fasilitas-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .review-user {
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-}
-
     </style>
 </head>
 <body>
 
-<!-- NAVBAR -->
 <nav class="navbar">
     <div class="navbar-container">
         <a href="index.php" class="logo">
@@ -713,11 +668,9 @@ a {
     </div>
 </nav>
 
-<!-- MAIN CONTAINER -->
 <div class="container">
     <div class="detail-grid">
         
-        <!-- KOLOM KIRI: GALERI FOTO -->
         <div>
             <?php $foto_utama = !empty($fotos) ? 'uploads/' . $fotos[0] : $default_image; ?>
             <img id="mainImage" src="<?= htmlspecialchars($foto_utama); ?>" class="main-img" onerror="this.src='<?= $default_image; ?>';">
@@ -731,7 +684,6 @@ a {
             <?php endif; ?>
         </div>
 
-        <!-- KOLOM KANAN: INFORMASI & FORM BOOKING -->
         <div>
             <h1 class="title"><?= htmlspecialchars($kos['nama_kos']); ?></h1>
             <p class="lokasi"><i class="fa-solid fa-location-dot" style="color: var(--pink);"></i> <?= htmlspecialchars($kos['alamat']); ?></p>
@@ -759,7 +711,6 @@ a {
                 <?php endif; ?>
             </div>
 
-            <!-- FORM BOOKING LANGSUNG -->
             <form action="proses_booking.php" method="POST" class="booking-box">
                 <input type="hidden" name="kos_id" value="<?= $kos['kos_id']; ?>">
                 
@@ -772,7 +723,6 @@ a {
             </form>
         </div>
 
-        <!-- DESKRIPSI -->
         <div class="deskripsi">
             <h3>Tentang Kost Ini</h3>
             <p>
@@ -781,31 +731,25 @@ a {
             </p>
         </div>
 
-        <!-- TOMBOL AKSI LAIN -->
         <div class="actions">
             <?php if (!empty($no_wa)): ?>
                 <a href="https://wa.me/<?= $no_wa; ?>?text=<?= urlencode('Halo, saya tertarik dengan ' . $kos['nama_kos'] . '. Apakah kost ini masih tersedia?'); ?>"
    target="_blank"
    rel="noopener noreferrer"
    class="btn-action btn-hubungi">
-
-    <i class="fa-brands fa-whatsapp"></i>
-    Hubungi Pemilik via WA
-
-</a>
+                    <i class="fa-brands fa-whatsapp"></i> Hubungi Pemilik via WA
+                </a>
             <?php else: ?>
                 <button class="btn-action btn-hubungi" style="background:#888;" onclick="alert('Nomor WA Pemilik belum tersedia.')"><i class="fa-brands fa-whatsapp"></i> Hubungi Pemilik</button>
             <?php endif; ?>
             <button class="btn-action btn-tandai" onclick="alert('Berhasil ditandai!')"><i class="fa-solid fa-heart"></i> Simpan Favorit</button>
         </div>
 
-        <!-- SEKSI ULASAN & REVIEW -->
         <div class="review-section">
             <div class="review-header">
                 <h3>💬 Ulasan & Review Penghuni</h3>
             </div>
 
-            <!-- FORM TAMBAH REVIEW DARI USER -->
             <?php if (isset($_SESSION['user_id'])): ?>
                 <form action="proses_review.php" method="POST" class="form-review-box">
                     <input type="hidden" name="kos_id" value="<?= $kos['kos_id']; ?>">
@@ -830,7 +774,6 @@ a {
                 </p>
             <?php endif; ?>
 
-            <!-- DAFTAR ULASAN PENGGUNA -->
             <?php if ($res_list_review && mysqli_num_rows($res_list_review) > 0): ?>
                 <?php while ($rev = mysqli_fetch_assoc($res_list_review)): ?>
                     <div class="review-box">
