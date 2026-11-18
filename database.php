@@ -1,9 +1,9 @@
 <?php
 
-$host = "localhost";
+$host = "mysql.railway.internal";
 $user = "root";
-$password = "";
-$database = "kosfinder";
+$password = "rXsuCHFAYLDlgtmSnYfBQlOWiAowdyvA";
+$database = "railway";
 
 $conn = mysqli_connect($host, $user, $password, $database);
 

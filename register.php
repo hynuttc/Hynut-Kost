@@ -188,9 +188,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Daftar - Nara KOST</title>
+    <title>Daftar - Hynut KOST</title>
 
-    <link rel="icon" href="uploads/logonara.png" type="image/png">
+    <link rel="icon" href="uploads/logohynut.png" type="image/png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -646,12 +646,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="navbar-container">
 
         <a href="index.php" class="logo">
-            <img src="uploads/logonara.png"
-                 alt="Logo Narakost"
+            <img src="uploads/logohynut.png"
+                 alt="Logo Hynutkost"
                  class="logo-icon">
 
             <div class="logo-text-group">
-                <span class="logo-title">Nara</span>
+                <span class="logo-title">Hynut</span>
                 <span class="logo-subtitle">KOST</span>
             </div>
         </a>
@@ -681,7 +681,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <h1 class="banner-title">
                     Bergabung dengan
-                    <span>Nara KOST</span>
+                    <span>Hynut KOST</span>
                 </h1>
 
                 <p class="banner-description">
@@ -724,8 +724,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="form-logo">
                 <div class="form-logo-icon">
-                    <img src="uploads/logonara.png"
-                         alt="Logo Narakost">
+                    <img src="uploads/logohynut.png"
+                         alt="Logo Hynutkost">
                 </div>
             </div>
 
