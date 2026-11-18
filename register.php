@@ -21,8 +21,10 @@ if (!isset($conn) || !($conn instanceof mysqli)) {
 }
 
 $error = '';
-$success = '';$nama = '';
-$email = '';$no_wa = '';
+$success = '';
+$nama = '';
+$email = '';
+$no_wa = '';
 
 // ========================================
 // PROSES REGISTER
@@ -31,12 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nama     = trim($_POST['nama'] ?? '');
     $email    = trim($_POST['email'] ?? '');
     $no_wa    = trim($_POST['no_wa'] ?? '');
-    $password =$_POST['password'] ?? '';
+    $password = $_POST['password'] ?? '';
     $role     = trim($_POST['role'] ?? '');
 
-    if ($nama === '' || $email === '' \vert{}\vert{}$password === '' || $role === '') {$error = "Harap isi semua kolom wajib dan pilih role!";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {$error = "Format email tidak valid!";
-    } elseif (strlen($password) < 6) {$error = "Password minimal harus 6 karakter!";
+    if ($nama === '' || $email === '' || $password === '' || $role === '') {
+        $error = "Harap isi semua kolom wajib dan pilih role!";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "Format email tidak valid!";
+    } elseif (strlen($password) < 6) {
+        $error = "Password minimal harus 6 karakter!";
     } else {
         // Cek apakah email sudah terdaftar
         $stmt_cek = mysqli_prepare($conn, "SELECT email FROM user WHERE email = ? LIMIT 1");
@@ -44,7 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         mysqli_stmt_execute($stmt_cek);
         mysqli_stmt_store_result($stmt_cek);
 
-        if (mysqli_stmt_num_rows($stmt_cek) > 0) {$error = "Email sudah terdaftar! Gunakan email lain.";
+        if (mysqli_stmt_num_rows($stmt_cek) > 0) {
+            $error = "Email sudah terdaftar! Gunakan email lain.";
             mysqli_stmt_close($stmt_cek);
         } else {
             mysqli_stmt_close($stmt_cek);
@@ -57,10 +63,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Query insert data user
             $query_insert = "INSERT INTO user (nama, email, password, role, no_wa, status_verifikasi) VALUES (?, ?, ?, ?, ?, ?)";
-            $stmt_insert = mysqli_prepare($conn,$query_insert);
+            $stmt_insert = mysqli_prepare($conn, $query_insert);
 
             if ($stmt_insert) {
-                mysqli_stmt_bind_param($stmt_insert, "ssssss", $nama,$email, $password_hash,$role, $no_wa,$status_verifikasi);
+                mysqli_stmt_bind_param($stmt_insert, "ssssss", $nama, $email, $password_hash, $role, $no_wa, $status_verifikasi);
                 
                 if (mysqli_stmt_execute($stmt_insert)) {
                     // Ambil user_id unik yang baru saja masuk ke database
@@ -68,10 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     mysqli_stmt_close($stmt_insert);
 
                     // Logika penyimpanan foto profil dengan ID unik di folder uploads
-                    if (isset($_FILES['foto']) &&$_FILES['foto']['error'] === UPLOAD_ERR_OK) {
-                        $file_tmp   =$_FILES['foto']['tmp_name'];
+                    if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
+                        $file_tmp = $_FILES['foto']['tmp_name'];
                         
-                        $finfo = finfo_open(FILEINFO_MIME_TYPE);$mime = finfo_file($finfo,$file_tmp);
+                        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                        $mime = finfo_file($finfo, $file_tmp);
                         finfo_close($finfo);
 
                         $allowed_types = [
@@ -80,14 +87,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'image/gif' => 'gif'
                         ];
 
-                        if (isset($allowed_types[$mime])) {$folder_upload = __DIR__ . '/uploads/';
+                        if (isset($allowed_types[$mime])) {
+                            $folder_upload = __DIR__ . '/uploads/';
                             if (!is_dir($folder_upload)) {
                                 mkdir($folder_upload, 0755, true);
                             }
 
-                            $ekstensi =$allowed_types[$mime];$nama_foto = 'user_' . $user_id . '.' .$ekstensi;
+                            $ekstensi = $allowed_types[$mime];
+                            $nama_foto = 'user_' . $user_id . '.' . $ekstensi;
 
-                            move_uploaded_file($file_tmp, $folder_upload .$nama_foto);
+                            move_uploaded_file($file_tmp, $folder_upload . $nama_foto);
                         }
                     }
 
@@ -744,10 +753,124 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- NAMA -->
                 <div class="form-group">
                     <label>Nama Lengkap</label>
-
                     <div class="input-wrapper">
                         <i class="fa-solid fa-user"></i>
-
                         <input
                             type="text"
                             name="nama"
+                            placeholder="Masukkan nama lengkap"
+                            value="<?= htmlspecialchars($nama, ENT_QUOTES, 'UTF-8'); ?>"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- EMAIL -->
+                <div class="form-group">
+                    <label>Email</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input
+                            type="email"
+                            name="email"
+                            placeholder="Masukkan email aktif"
+                            value="<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8'); ?>"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- NOMOR WHATSAPP -->
+                <div class="form-group">
+                    <label>No. WhatsApp / HP</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-phone"></i>
+                        <input
+                            type="text"
+                            name="no_wa"
+                            placeholder="Contoh: 081234567890"
+                            value="<?= htmlspecialchars($no_wa, ENT_QUOTES, 'UTF-8'); ?>"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- PASSWORD -->
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock"></i>
+                        <input
+                            type="password"
+                            name="password"
+                            id="password"
+                            placeholder="Minimal 6 karakter"
+                            required
+                        >
+                        <button type="button" class="toggle-password" onclick="togglePassword()">
+                            <i class="fa-solid fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ROLE -->
+                <div class="form-group">
+                    <label>Pilih Role</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-users"></i>
+                        <select name="role" required>
+                            <option value="" disabled selected>Pilih Role Akun</option>
+                            <option value="User">User (Pencari Kost)</option>
+                            <option value="Owner">Owner (Pemilik Kost)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- FOTO PROFIL (OPSIONAL) -->
+                <div class="form-group">
+                    <label>Foto Profil (Opsional)</label>
+                    <div class="input-wrapper">
+                        <input type="file" name="foto" accept=".jpg, .jpeg, .png, .gif">
+                    </div>
+                </div>
+
+                <!-- TOMBOL SUBMIT -->
+                <button type="submit" class="btn-submit">
+                    <i class="fa-solid fa-user-plus"></i> Daftar Sekarang
+                </button>
+
+            </form>
+
+            <div class="or-divider">sudah punya akun?</div>
+
+            <a href="login.php" class="btn-login-link">
+                <i class="fa-solid fa-right-to-bracket"></i> Masuk ke Akun
+            </a>
+
+            <?php endif; ?>
+
+        </section>
+
+    </div>
+
+</main>
+
+<script>
+function togglePassword() {
+    const password = document.getElementById('password');
+    const eyeIcon = document.getElementById('eyeIcon');
+
+    if (password.type === 'password') {
+        password.type = 'text';
+        eyeIcon.classList.remove('fa-eye');
+        eyeIcon.classList.add('fa-eye-slash');
+    } else {
+        password.type = 'password';
+        eyeIcon.classList.remove('fa-eye-slash');
+        eyeIcon.classList.add('fa-eye');
+    }
+}
+</script>
+
+</body>
+</html>
