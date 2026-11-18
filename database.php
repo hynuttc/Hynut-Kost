@@ -1,13 +1,18 @@
 <?php
-$host = getenv('MYSQLHOST');
-$user = getenv('MYSQLUSER');
-$pass = getenv('MYSQLPASSWORD');
-$db   = getenv('MYSQLDATABASE');
-$port = getenv('MYSQLPORT');
+$host = getenv('MYSQLHOST') ?: getenv('PGHOST');
+$user = getenv('MYSQLUSER') ?: getenv('PGUSER');
+$pass = getenv('MYSQLPASSWORD') ?: getenv('PGPASSWORD');
+$db   = getenv('MYSQLDATABASE') ?: getenv('PGDATABASE');
+$port = getenv('MYSQLPORT') ?: getenv('PGPORT');
+
+// Cek apakah variabel terbaca atau kosong
+if (!$host) {
+    die("Error: Variabel environment Railway belum terbaca. Pastikan Variable References sudah terpasang.");
+}
 
 $conn = mysqli_connect($host, $user, $pass, $db, $port);
 
 if (!$conn) {
-    die("Error Koneksi MySQL: " . mysqli_connect_error());
+    die("Koneksi database gagal: " . mysqli_connect_error());
 }
 ?>
