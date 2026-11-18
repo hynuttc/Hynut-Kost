@@ -5,16 +5,23 @@ error_reporting(E_ALL);
 session_start();
 require_once 'database.php';
 
-// Menyesuaikan koneksi database menggunakan variabel $db
-if (!isset($db) && isset($conn)) {
-    $db = $conn;
-} elseif (!isset($db) && isset($koneksi)) {
-    $db = $koneksi;
+// ========================================
+// MENYESUAIKAN KONEKSI DATABASE SECARA FLEKSIBEL
+// ========================================
+if (!isset($db) || !($db instanceof mysqli)) {
+    if (isset($conn) && ($conn instanceof mysqli)) {
+        $db = $conn;
+    } elseif (isset($koneksi) && ($koneksi instanceof mysqli)) {
+        $db = $koneksi;
+    }
 }
 
-if (!isset($db) || !$db) {
+if (!isset($db) || !($db instanceof mysqli)) {
     die("Koneksi database gagal. Periksa kembali file database.php.");
 }
+
+// Menyelaraskan variabel $conn agar kompatibel jika ada kode di bawah yang memakai $conn
+$conn = $db;
 
 if (!isset($_SESSION['is_login']) || $_SESSION['is_login'] !== true) {
     header("Location: login.php");
@@ -38,7 +45,7 @@ if (isset($_GET['hapus_id'])) {
     exit;
 }
 
-// Mengambil data pengguna
+// Mengambil data pengguna menggunakan $db (atau $conn) yang sudah valid
 $stmt_user = mysqli_prepare($db, "SELECT * FROM user WHERE user_id = ?");
 mysqli_stmt_bind_param($stmt_user, "s", $user_id);
 mysqli_stmt_execute($stmt_user);
