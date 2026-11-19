@@ -535,7 +535,7 @@ body {
                 <!-- TOMBOL CETAK LAPORAN -->
                 <div class="row mb-3">
                     <div class="col-12 text-right">
-                        <a href="cetak_laporan.php" target="_blank" class="btn btn-primary">
+                        <a href="../cetak_laporan.php" target="_blank" class="btn btn-primary">
                             <i class="fas"></i><strong> Cetak Laporan</strong>
                         </a>
                     </div>
