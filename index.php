@@ -48,14 +48,48 @@ if ($user_id) {
     }
 }
 
-// Ambil nama foto terbaru dari database ($user), jika kosong baru cek session
-$nama_foto = !empty($user['foto']) ? $user['foto'] : ($_SESSION['foto'] ?? '');
+// Ambil nama foto dari database ($user) atau session jika ada
+$nama_foto = !empty($user['foto']) ? trim($user['foto']) : trim($_SESSION['foto'] ?? '');
 $foto_session = 'uploads/default.jpeg';
+$folder_upload = __DIR__ . '/uploads/';
 
-if (!empty($nama_foto) && file_exists(__DIR__ . '/uploads/' . $nama_foto)) {
-    // Tambahkan ?v=time() agar browser tidak menampilkan cache gambar lama
-    $foto_session = 'uploads/' . $nama_foto . '?v=' . time();
-    $_SESSION['foto'] = $nama_foto; // Perbarui session otomatis
+if (is_dir($folder_upload)) {
+    $files_upload = scandir($folder_upload);
+    $found_file = '';
+
+    // 1. Jika ada nama file spesifik di DB/session, cari kecocokan exact atau case-insensitive
+    if ($nama_foto !== '') {
+        $nama_foto_bersih = basename($nama_foto);
+        if (is_file($folder_upload . $nama_foto_bersih)) {
+            $found_file = $nama_foto_bersih;
+        } else {
+            $target_lower = strtolower($nama_foto_bersih);
+            foreach ($files_upload as $f) {
+                if ($f === '.' || $f === '..') continue;
+                if (strtolower($f) === $target_lower && is_file($folder_upload . $f)) {
+                    $found_file = $f;
+                    break;
+                }
+            }
+        }
+    }
+
+    // 2. Jika belum ketemu dan ada $user_id, cari file dengan pola user_[id].* (abaikan huruf besar/kecil)
+    if ($found_file === '' && !empty($user_id)) {
+        $prefix = 'user_' . strtolower((string)$user_id) . '.';
+        foreach ($files_upload as $f) {
+            if ($f === '.' || $f === '..') continue;
+            if (strpos(strtolower($f), $prefix) === 0 && is_file($folder_upload . $f)) {
+                $found_file = $f;
+                break;
+            }
+        }
+    }
+
+    if ($found_file !== '') {
+        $foto_session = 'uploads/' . rawurlencode($found_file) . '?v=' . time();
+        $_SESSION['foto'] = $found_file;
+    }
 }
 
 /* =========================================

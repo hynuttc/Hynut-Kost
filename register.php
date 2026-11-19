@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Hash Password
             $password_hash = password_hash($password, PASSWORD_DEFAULT);
-            
+
             // Set status verifikasi awal menjadi "Menunggu"
             $status_verifikasi = 'Menunggu';
 
@@ -67,36 +67,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($stmt_insert) {
                 mysqli_stmt_bind_param($stmt_insert, "ssssss", $nama, $email, $password_hash, $role, $no_wa, $status_verifikasi);
-                
+
                 if (mysqli_stmt_execute($stmt_insert)) {
                     // Ambil user_id unik yang baru saja masuk ke database
                     $user_id = mysqli_insert_id($conn);
                     mysqli_stmt_close($stmt_insert);
 
-                    // Logika penyimpanan foto profil dengan ID unik di folder uploads
+                    // Logika penyimpanan foto profil dengan ID unik di folder uploads (huruf kecil konsisten)
                     if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
                         $file_tmp = $_FILES['foto']['tmp_name'];
-                        
-                        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                        $mime = finfo_file($finfo, $file_tmp);
-                        finfo_close($finfo);
+                        $ekstensi = '';
 
-                        $allowed_types = [
-                            'image/jpeg' => 'jpg',
-                            'image/png' => 'png',
-                            'image/gif' => 'gif'
-                        ];
+                        if (function_exists('finfo_open')) {
+                            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                            if ($finfo) {
+                                $mime = finfo_file($finfo, $file_tmp);
+                                finfo_close($finfo);
 
-                        if (isset($allowed_types[$mime])) {
+                                $allowed_types = [
+                                    'image/jpeg' => 'jpg',
+                                    'image/png'  => 'png',
+                                    'image/gif'  => 'gif'
+                                ];
+
+                                if (isset($allowed_types[$mime])) {
+                                    $ekstensi = $allowed_types[$mime];
+                                }
+                            }
+                        }
+
+                        if ($ekstensi === '') {
+                            $ext_asli = strtolower(pathinfo($_FILES['foto']['name'] ?? '', PATHINFO_EXTENSION));
+                            $ext_map = [
+                                'jpg'  => 'jpg',
+                                'jpeg' => 'jpg',
+                                'png'  => 'png',
+                                'gif'  => 'gif'
+                            ];
+                            if (isset($ext_map[$ext_asli])) {
+                                $ekstensi = $ext_map[$ext_asli];
+                            }
+                        }
+
+                        if ($ekstensi !== '') {
                             $folder_upload = __DIR__ . '/uploads/';
                             if (!is_dir($folder_upload)) {
                                 mkdir($folder_upload, 0755, true);
                             }
 
-                            $ekstensi = $allowed_types[$mime];
-                            $nama_foto = 'user_' . $user_id . '.' . $ekstensi;
+                            foreach (['jpg', 'jpeg', 'png', 'gif'] as $old_ext) {
+                                $old_path = $folder_upload . 'user_' . $user_id . '.' . $old_ext;
+                                if (is_file($old_path)) {
+                                    @unlink($old_path);
+                                }
+                            }
 
-                            move_uploaded_file($file_tmp, $folder_upload . $nama_foto);
+                            $nama_foto = 'user_' . $user_id . '.' . $ekstensi;
+                            $tujuan_file = $folder_upload . $nama_foto;
+
+                            if (move_uploaded_file($file_tmp, $tujuan_file)) {
+                                @chmod($tujuan_file, 0644);
+                            }
                         }
                     }
 
@@ -430,7 +461,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         font-size: 14px;
     }
 
-    .form-group input, 
+    .form-group input,
     .form-group select {
         width: 100%;
         height: 46px;
@@ -510,7 +541,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         font-size: 12px;
     }
 
-    .or-divider::before, 
+    .or-divider::before,
     .or-divider::after {
         content: "";
         height: 1px;
