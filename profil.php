@@ -26,12 +26,24 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = (int) $_SESSION['user_id'];
+$user = [];
 
-$query = mysqli_query($db, "SELECT * FROM user WHERE user_id = '$user_id'");
-$user = mysqli_fetch_assoc($query);
+if ($user_id > 0) {
+    $stmt_user = mysqli_prepare($db, "SELECT * FROM user WHERE user_id = ? LIMIT 1");
+    if ($stmt_user) {
+        mysqli_stmt_bind_param($stmt_user, "i", $user_id);
+        mysqli_stmt_execute($stmt_user);
+        $res_user = mysqli_stmt_get_result($stmt_user);
+        $user = mysqli_fetch_assoc($res_user) ?: [];
+        mysqli_stmt_close($stmt_user);
+    }
+}
 
-if (!$user) {
-    die("Data pengguna tidak ditemukan.");
+if (empty($user)) {
+    session_unset();
+    session_destroy();
+    header("Location: login.php");
+    exit;
 }
 
 $error = '';
