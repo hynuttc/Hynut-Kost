@@ -144,13 +144,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// FOTO PROFIL
-$foto_user = (
-    !empty($_SESSION['foto']) &&
-    file_exists('uploads/' . basename($_SESSION['foto']))
-)
-    ? 'uploads/' . basename($_SESSION['foto']) . '?v=' . time()
-    : 'uploads/default.jpeg';
+// FOTO PROFIL (DB / Session + pola user_[id].* case-insensitive)
+$folder_upload = __DIR__ . '/uploads/';
+$foto_ditemukan = '';
+$kandidat_foto = [];
+
+if (!empty($user['foto'])) {
+    $kandidat_foto[] = trim((string) $user['foto']);
+}
+if (!empty($_SESSION['foto'])) {
+    $kandidat_foto[] = trim((string) $_SESSION['foto']);
+}
+
+if (is_dir($folder_upload)) {
+    $files_upload = scandir($folder_upload);
+
+    // 1. Cek nama file dari DB atau session (exact lalu case-insensitive)
+    foreach ($kandidat_foto as $nama_kandidat) {
+        if ($nama_kandidat === '') {
+            continue;
+        }
+        $bersih = basename($nama_kandidat);
+        if (is_file($folder_upload . $bersih)) {
+            $foto_ditemukan = $bersih;
+            break;
+        }
+
+        $target_lower = strtolower($bersih);
+        foreach ($files_upload as $f) {
+            if ($f === '.' || $f === '..') {
+                continue;
+            }
+            if (strtolower($f) === $target_lower && is_file($folder_upload . $f)) {
+                $foto_ditemukan = $f;
+                break 2;
+            }
+        }
+    }
+
+    // 2. Jika belum ketemu, cari berdasarkan user_[id].* (abaikan huruf besar/kecil)
+    if ($foto_ditemukan === '' && $user_id > 0) {
+        $prefix = 'user_' . strtolower((string) $user_id) . '.';
+        foreach ($files_upload as $f) {
+            if ($f === '.' || $f === '..') {
+                continue;
+            }
+            if (strpos(strtolower($f), $prefix) === 0 && is_file($folder_upload . $f)) {
+                $foto_ditemukan = $f;
+                break;
+            }
+        }
+    }
+}
+
+if ($foto_ditemukan !== '') {
+    $_SESSION['foto'] = $foto_ditemukan;
+    $foto_user = 'uploads/' . rawurlencode($foto_ditemukan) . '?v=' . time();
+} else {
+    $foto_user = 'uploads/default.jpeg';
+}
 
 $nama_user = htmlspecialchars($user['nama'] ?? '');
 $email_user = htmlspecialchars($user['email'] ?? '');
