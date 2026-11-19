@@ -156,63 +156,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// FOTO PROFIL (DB / Session + pola user_[id].* case-insensitive)
+// ========================================
+// FOTO PROFIL USER
+// ========================================
+
 $folder_upload = __DIR__ . '/uploads/';
+
 $foto_ditemukan = '';
-$kandidat_foto = [];
+$nama_foto_db = trim($user['foto'] ?? '');
 
-if (!empty($user['foto'])) {
-    $kandidat_foto[] = trim((string) $user['foto']);
+// Ambil foto berdasarkan nama file dari database
+if ($nama_foto_db !== '') {
+
+    $nama_foto_db = basename($nama_foto_db);
+
+    $lokasi_foto = $folder_upload . $nama_foto_db;
+
+    if (is_file($lokasi_foto)) {
+        $foto_ditemukan = $nama_foto_db;
+    }
 }
-if (!empty($_SESSION['foto'])) {
-    $kandidat_foto[] = trim((string) $_SESSION['foto']);
-}
 
-if (is_dir($folder_upload)) {
-    $files_upload = scandir($folder_upload);
+// Jika foto database tidak ditemukan,
+// cari berdasarkan ID user
+if ($foto_ditemukan === '' && is_dir($folder_upload)) {
 
-    // 1. Cek nama file dari DB atau session (exact lalu case-insensitive)
-    foreach ($kandidat_foto as $nama_kandidat) {
-        if ($nama_kandidat === '') {
-            continue;
-        }
-        $bersih = basename($nama_kandidat);
-        if (is_file($folder_upload . $bersih)) {
-            $foto_ditemukan = $bersih;
+    foreach (['jpg', 'jpeg', 'png', 'gif'] as $ext) {
+
+        $nama_kandidat = 'user_' . $user_id . '.' . $ext;
+
+        if (is_file($folder_upload . $nama_kandidat)) {
+            $foto_ditemukan = $nama_kandidat;
             break;
         }
-
-        $target_lower = strtolower($bersih);
-        foreach ($files_upload as $f) {
-            if ($f === '.' || $f === '..') {
-                continue;
-            }
-            if (strtolower($f) === $target_lower && is_file($folder_upload . $f)) {
-                $foto_ditemukan = $f;
-                break 2;
-            }
-        }
-    }
-
-    // 2. Jika belum ketemu, cari berdasarkan user_[id].* (abaikan huruf besar/kecil)
-    if ($foto_ditemukan === '' && $user_id > 0) {
-        $prefix = 'user_' . strtolower((string) $user_id) . '.';
-        foreach ($files_upload as $f) {
-            if ($f === '.' || $f === '..') {
-                continue;
-            }
-            if (strpos(strtolower($f), $prefix) === 0 && is_file($folder_upload . $f)) {
-                $foto_ditemukan = $f;
-                break;
-            }
-        }
     }
 }
 
+// Tentukan foto yang ditampilkan
 if ($foto_ditemukan !== '') {
+
+    $foto_user = 'uploads/' .
+        rawurlencode($foto_ditemukan) .
+        '?v=' . time();
+
     $_SESSION['foto'] = $foto_ditemukan;
-    $foto_user = 'uploads/' . rawurlencode($foto_ditemukan) . '?v=' . time();
+
 } else {
+
     $foto_user = 'uploads/default.jpeg';
 }
 

@@ -126,8 +126,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $tujuan_file = $folder_upload . $nama_foto;
 
                             if (move_uploaded_file($file_tmp, $tujuan_file)) {
-                                @chmod($tujuan_file, 0644);
-                            }
+
+    @chmod($tujuan_file, 0644);
+
+    // SIMPAN NAMA FOTO KE DATABASE
+    $stmt_foto = mysqli_prepare(
+        $conn,
+        "UPDATE user SET foto = ? WHERE user_id = ?"
+    );
+
+    if ($stmt_foto) {
+        mysqli_stmt_bind_param(
+            $stmt_foto,
+            "si",
+            $nama_foto,
+            $user_id
+        );
+
+        mysqli_stmt_execute($stmt_foto);
+        mysqli_stmt_close($stmt_foto);
+    }
+
+} else {
+    $error = "Gagal menyimpan foto profil!";
+}
                         }
                     }
 
