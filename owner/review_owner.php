@@ -1,5 +1,33 @@
 <?php
+session_start();
 require_once '../database.php';
+
+// ========================================
+// LOGIKA AMBIL NAMA & FOTO BERDASARKAN ID UNIK
+// ========================================
+$current_user_id = $_SESSION['user_id'] ?? 0;
+$nama_owner_aktif = $_SESSION['nama'] ?? 'Hynut';
+
+if ($current_user_id) {
+    $q_user_aktif = mysqli_query($conn, "SELECT nama FROM user WHERE user_id = '$current_user_id' LIMIT 1");
+    if ($q_user_aktif && $row_ua = mysqli_fetch_assoc($q_user_aktif)) {
+        $nama_owner_aktif = $row_ua['nama'];
+    }
+}
+
+$found_foto = 'default.jpeg';
+$extensions = ['jpg', 'jpeg', 'png', 'gif'];
+
+if ($current_user_id) {
+    foreach ($extensions as $ext) {
+        $filename = 'user_' . $current_user_id . '.' . $ext;
+        if (file_exists(__DIR__ . '/../uploads/' . $filename)) {
+            $found_foto = $filename;
+            break;
+        }
+    }
+}
+$foto_path_owner = '../uploads/' . $found_foto . '?v=' . time();
 
 // =================================================
 // AMBIL DATA REVIEW DARI DATABASE
@@ -108,6 +136,13 @@ body {
 .user-panel .info a {
     color: #B96F8A !important;
     font-weight: 600;
+}
+
+.user-panel .image img {
+    border: 2px solid var(--pink-border);
+    width: 35px;
+    height: 35px;
+    object-fit: cover;
 }
 
 /* SEARCH SIDEBAR */
@@ -329,13 +364,13 @@ body {
         </a>
 
         <div class="sidebar">
-             <!-- USER PANEL -->
-            <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+             <!-- USER PANEL DINAMIS -->
+            <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
                 <div class="image">
-                    <img src="../uploads/owner.jpeg" class="img-circle elevation-2" alt="User Image">
+                    <img src="<?= htmlspecialchars($foto_path_owner); ?>" class="img-circle elevation-2" alt="User Image" onerror="this.src='../uploads/default.jpeg';">
                 </div>
                 <div class="info">
-                    <a href="#" class="d-block">Hynut</a>
+                    <a href="#" class="d-block"><?= htmlspecialchars($nama_owner_aktif); ?></a>
                 </div>
             </div>
 
@@ -375,7 +410,7 @@ body {
                     </li>
                     <li class="nav-item">
                         <a href="kamar_owner.php" class="nav-link">
-                            <i class="nav-icon fas fas fa-bed"></i>
+                            <i class="nav-icon fas fa-bed"></i>
                             <p>KAMAR</p>
                         </a>
                     </li>
